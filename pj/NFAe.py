@@ -49,6 +49,35 @@ class NFAe:
             self.transition_to_state_with_input(inp)
         return self.in_accept_state()
 
+def nhap_nfae_tu_file(ten_file, epsilon='ε'):
+    with open(ten_file, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f.readlines()]
+    
+    # Dòng 1: tập trạng thái
+    states = set(lines[0].split())
+    
+    # Dòng 2: bảng chữ cái
+    alphabet = set(lines[1].split())
+    
+    # Dòng 3: trạng thái bắt đầu
+    start_state = lines[2]
+    
+    # Dòng 4: tập accept states
+    accept_states = set(lines[3].split())
+    
+    # Dòng 5+: hàm chuyển
+    tf = dict()
+    for i in range(4, len(lines)):
+        parts = lines[i].split()
+        from_state = parts[0]
+        symbol = parts[1]
+        to_states = set(parts[2:])   # nhiều trạng thái
+        
+        tf[(from_state, symbol)] = to_states
+    
+    return NFAe(states, alphabet, tf, start_state, accept_states, epsilon)
+
+
 states = {1, 2, 3}
 alphabet = {'a','b'}
 start_state = 1
@@ -62,6 +91,13 @@ tf[(3, 'a')] = {2}
 tf[(3, 'b')] = {2, 3}
 
 nfae = NFAe(states, alphabet, tf, start_state, accept_states)
+nfae2 = nhap_nfae_tu_file("nfae.txt")
+
+L_input = input("Nhập chuỗi đầu vào: ")
+L = list(L_input)
+
+print(nfae2.go_to_initial_state())
+print(nfae2.run_with_input_list(L))
 
 # Test
-print(nfae.run_with_input_list(list("aaba")))  # True
+# print(nfae.run_with_input_list(list("aaba")))  # True
