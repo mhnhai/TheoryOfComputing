@@ -86,54 +86,46 @@ class NFAe:
         return
     
 def convert_NFAe_to_DFA(nfae: NFAe):
-    """
-    Chuyển đổi từ NFAε sang DFA dựa trên thuật toán subset construction có epsilon-closure.
-    Trả về: đối tượng DFA
-    """
-
     # --- Khởi tạo ---
     dfa_states = []                # danh sách các tập trạng thái (mỗi phần tử là frozenset)
     dfa_transition = dict()        # bảng chuyển (T, a) -> U
     dfa_accept_states = set()      # tập trạng thái kết thúc trong DFA
     marked = dict()                # trạng thái đã xét hay chưa
-
-    # Bước 1: epsilon-closure(q0)
-    start_closure = frozenset(nfae.epsilon_closure({nfae.start_state}))
+    
+    start_closure = tuple((nfae.epsilon_closure({nfae.start_state})))
     dfa_states.append(start_closure)
-    marked[start_closure] = False  # chưa được đánh dấu
+    marked[start_closure] = False
 
-    # Bước 2: Duyệt từng trạng thái của DFA
     while any(not marked[s] for s in marked):
-        # Lấy một trạng thái T chưa đánh dấu
         T = next(s for s in marked if not marked[s])
-        marked[T] = True  # đánh dấu
-        # Với mỗi ký hiệu nhập a trong alphabet của NFAε 
+        marked[T] = True
+
         for a in nfae.alphabet:
-            # δ(T, a): hợp các δ(q, a) với q ∈ T
+            if a == nfae.epsilon:
+                continue
+
             move_set = set()
             for q in T:
                 if (q, a) in nfae.transition_function:
                     move_set.update(nfae.transition_function[(q, a)])
-            # ε-closure(δ(T, a))
-            U = frozenset(nfae.epsilon_closure(move_set))
+            U = nfae.epsilon_closure(move_set)
             if not U:
-                continue  # nếu rỗng thì bỏ qua
+                continue
 
-            # Thêm U nếu chưa có trong dfa_states
-            if U not in marked:
-                dfa_states.append(U)
-                marked[U] = False
+            U_tuple = tuple((U))
+            print(U_tuple)
+            if U_tuple not in marked:
+                marked[U_tuple] = False
+                dfa_states.append(U_tuple)
 
-            # Cập nhật bảng chuyển DFA
-            dfa_transition[(T, a)] = U
+            dfa_transition[(T, a)] = U_tuple
 
-    # Bước 3: Xác định tập trạng thái kết thúc của DFA
+    # xác định trạng thái kết thúc
     for state_set in dfa_states:
         if any(s in nfae.accept_states for s in state_set):
             dfa_accept_states.add(state_set)
 
-    # --- Tạo đối tượng DFA ---
-    dfa = DFA(
+    return DFA(
         states=dfa_states,
         alphabet=nfae.alphabet,
         transition_function=dfa_transition,
@@ -141,8 +133,7 @@ def convert_NFAe_to_DFA(nfae: NFAe):
         accept_states=dfa_accept_states,
         current_state=start_closure
     )
-
-    return dfa
+        
 
 # class NFAeToDFA(NFAe):
         
