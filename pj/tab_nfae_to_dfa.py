@@ -50,7 +50,7 @@ def show_nfae_dfa_tab():
         accept_states_input = st.text_input("Trạng thái kết thúc (cách nhau bằng dấu cách)", default_accept, key="nfae_accept")
         transition_input = st.text_area("Hàm chuyển (vd: s input s1 s2)", default_transitions, key="nfae_tf", height=150)
 
-        if st.button("Tạo NFAε"):
+        if st.button("Tạo NFAε", key="btn_create_nfae_to_dfa"):
             try:
                 states = set(states_input.split())
                 alphabet = set(alphabet_input.split())
@@ -83,7 +83,7 @@ def show_nfae_dfa_tab():
         uploaded_file = st.file_uploader("Chọn file NFAε (.txt)", type=["txt"], key="nfae_file")
         
         if uploaded_file is not None:
-            if st.button("📥 Tải file"):
+            if st.button("📥 Tải file", key = "file_upload"):
                 try:
                     content = uploaded_file.read().decode("utf-8").strip().splitlines()
 
@@ -186,13 +186,13 @@ def show_nfae_dfa_tab():
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("Kiểm tra trên DFA"):
+        if st.button("Kiểm tra trên DFA", key = "dfa_checker"):
             dfa.go_to_initial_state()
             result = dfa.run_with_input_list(list(test_input))
             st.success("Chuỗi hợp lệ!" if result else "Chuỗi bị từ chối!")
 
     with col2:
-        if st.button("Kiểm tra trên NFAε"):
+        if st.button("Kiểm tra trên NFAε", key = "nfae_checker"):
             nfae.go_to_initial_state()
             result = nfae.run_with_input_list(list(test_input))
             st.success("✔️ NFAε chấp nhận!") if result else st.error("❌ NFAε từ chối!")

@@ -1,35 +1,43 @@
-class DFA:
+import itertools  
+class NFA:
     def __init__ (self, states, alphabet, transition_function, start_state, accept_states, current_state):
         self.states = states
         self.alphabet = alphabet
         self.transition_function = transition_function
         self.start_state = start_state
         self.accept_states = accept_states
-        self.current_state = start_state
-        return
-    
+        self.current_state = {start_state}
+
     def transition_to_state_with_input(self, input_value):
         #nếu không tồn tại đường đi từ trạng thái hiện tại trên input_value
-        if ((self.current_state, input_value) not in self.transition_function.keys()):
-            self.current_state = None
-            return
-        #tồn tại đường đi từ trạng thái hiện tại trên input_value
-        self.current_state = self.transition_function[(self.current_state, input_value)]
+        next_states = set()
+        for state in self.current_state:
+          if (state, input_value) in self.transition_function:
+              next_states.update(self.transition_function[(state, input_value)])
+        self.current_state = next_states
         return
-    
+
     def in_accept_state(self):
-        return self.current_state in self.accept_states
-    
+        return any(state in self.accept_states for state in self.current_state)
+
     def go_to_initial_state(self):
-        self.current_state = self.start_state
+        self.current_state = {self.start_state}
         return
-    
+
     def run_with_input_list(self, input_list):
         self.go_to_initial_state()
         for inp in input_list:
             self.transition_to_state_with_input(inp)
             continue
         return self.in_accept_state()
+
+def generate_states(L1):
+    concatenated_states = list()
+    for i in range(1, len(L1)+1):
+        for permutation in itertools.combinations(L1, i):
+            concatenated_states.append((permutation))
+    return concatenated_states
+
 class NFAe:
     def __init__(self, states, alphabet, transition_function, start_state, accept_states, epsilon='e'):
         self.states = states
@@ -84,78 +92,66 @@ class NFAe:
     def transferToDFA(self):
         self.go_to_initial_state()
         return
+
+def convert_NFAe_to_NFA(nfae: NFAe):
+    # Trạng thái bắt đầu của NFA
+    start_state = tuple([nfae.start_state])
     
-def convert_NFAe_to_DFA(nfae: NFAe):
-    # --- Khởi tạo ---
-    dfa_states = []                # danh sách các tập trạng thái (mỗi phần tử là frozenset)
-    dfa_transition = dict()        # bảng chuyển (T, a) -> U
-    dfa_accept_states = set()      # tập trạng thái kết thúc trong DFA
-    marked = dict()                # trạng thái đã xét hay chưa
+    # tập bảng chữ cái của NFA
+    nfa_alphabet = nfae.alphabet
     
-    start_closure = tuple((nfae.epsilon_closure({nfae.start_state})))
-    dfa_states.append(start_closure)
-    marked[start_closure] = False
+    # tập trạng thái của NFA
+    nfa_states = nfae.states
+    
+     # tập trạng thái kết thúc trong NFA
+    # F’ = F U q0 nếu E-CLOSURE(q0) chứa một trạng thái thuộc F. 
+    # Ngược lại, F’ = F
+    nfa_accept_states = set() 
+    print(nfae.accept_states)
+    epsilon_start_state = nfae.epsilon_closure({nfae.start_state})
+    if any(s in epsilon_start_state for s in nfae.accept_states ):
+        nfae_start_state = nfae.start_state
+        nfa_accept_states.add(nfae_start_state)
+    # bảng chuyển (T, a) -> U
+    nfa_transition = dict()       
+    for state in nfa_states:
+        # với mỗi kí tự trong bảng chữ cái
+        epsilon_state = nfae.epsilon_closure({state})
+        for symbol in nfa_alphabet:
+            # tìm tập trạng thái đích
+            #  • δ’(q, a) = δ*(q, a) = E-CLOSURE(δ(δ*(q, e),a))
+            next_states = set()
+            for e_state in epsilon_state:
+                if (e_state, symbol) in nfae.transition_function:
+                    next_states.update(nfae.transition_function[(e_state, symbol)])
+            if next_states:
+                nfa_transition[(state, symbol)] = nfae.epsilon_closure(next_states)
 
-    while any(not marked[s] for s in marked):
-        T = next(s for s in marked if not marked[s])
-        marked[T] = True
-
-        for a in nfae.alphabet:
-            if a == nfae.epsilon:
-                continue
-
-            move_set = set()
-            for q in T:
-                if (q, a) in nfae.transition_function:
-                    move_set.update(nfae.transition_function[(q, a)])
-            U = nfae.epsilon_closure(move_set)
-            if not U:
-                continue
-
-            U_tuple = tuple((U))
-            print(U_tuple)
-            if U_tuple not in marked:
-                marked[U_tuple] = False
-                dfa_states.append(U_tuple)
-
-            dfa_transition[(T, a)] = U_tuple
-
-    # xác định trạng thái kết thúc
-    for state_set in dfa_states:
-        if any(s in nfae.accept_states for s in state_set):
-            dfa_accept_states.add(state_set)
-
-    return DFA(
-        states=dfa_states,
-        alphabet=nfae.alphabet,
-        transition_function=dfa_transition,
-        start_state=start_closure,
-        accept_states=dfa_accept_states,
-        current_state=start_closure
+    nfa = NFA(
+        states=nfa_states,
+        alphabet=nfa_alphabet,
+        transition_function=nfa_transition,
+        start_state=start_state,
+        accept_states=nfa_accept_states,
+        current_state=start_state
     )
-        
 
-# class NFAeToDFA(NFAe):
-        
-states = {0, 1, 2, 3, 4, 5, 6 ,7 ,8 ,9 ,10}
-alphabet = {'a','b'}
+    return nfa
+
+
+states = {0, 1, 2}
+alphabet = {'0','1', '2'}
 start_state = 0
-accept_states = {10}
+accept_states = {2}
 
 tf = dict()
-tf[(0, 'e')] = {1, 7}
-tf[(1, 'e')] = {2, 4}
-tf[(3, 'e')] = {6}
-tf[(5, 'e')] = {6}
-tf[(6, 'e')] = {1,7}
-tf[(2, 'a')] = {3}
-tf[(4, 'b')] = {5}
-tf[(7, 'a')] = {8}
-tf[(8, 'b')] = {9}
-tf[(9, 'b')] = {10}
+tf[(0, 'e')] = {1}
+tf[(1, 'e')] = {2}
+tf[(0, '0')] = {0}
+tf[(1, '1')] = {1}
+tf[(2, '2')] = {2}
+
 
 nfae = NFAe(states, alphabet, tf, start_state, accept_states)
-dfa = convert_NFAe_to_DFA(nfae)
-# Test
-print(nfae.run_with_input_list(list("aaba")))  # True
-print(dfa.states)
+nfa = convert_NFAe_to_NFA(nfae)
+print(nfae.accept_states)
