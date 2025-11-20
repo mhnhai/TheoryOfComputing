@@ -1,4 +1,3 @@
-import itertools  
 class NFA:
     def __init__ (self, states, alphabet, transition_function, start_state, accept_states, current_state):
         self.states = states
@@ -30,13 +29,6 @@ class NFA:
             self.transition_to_state_with_input(inp)
             continue
         return self.in_accept_state()
-
-def generate_states(L1):
-    concatenated_states = list()
-    for i in range(1, len(L1)+1):
-        for permutation in itertools.combinations(L1, i):
-            concatenated_states.append((permutation))
-    return concatenated_states
 
 class NFAe:
     def __init__(self, states, alphabet, transition_function, start_state, accept_states, epsilon='e'):
@@ -95,7 +87,7 @@ class NFAe:
 
 def convert_NFAe_to_NFA(nfae: NFAe):
     # Trạng thái bắt đầu của NFA
-    start_state = tuple([nfae.start_state])
+    start_state = nfae.start_state
     
     # tập bảng chữ cái của NFA
     nfa_alphabet = nfae.alphabet
@@ -154,4 +146,4 @@ tf[(2, '2')] = {2}
 
 nfae = NFAe(states, alphabet, tf, start_state, accept_states)
 nfa = convert_NFAe_to_NFA(nfae)
-print(nfae.accept_states)
+print(nfa.transition_function)

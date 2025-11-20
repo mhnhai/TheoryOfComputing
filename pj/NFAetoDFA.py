@@ -113,7 +113,7 @@ def convert_NFAe_to_DFA(nfae: NFAe):
                 continue
 
             U_tuple = tuple((U))
-            print(U_tuple)
+            # print(U_tuple)
             if U_tuple not in marked:
                 marked[U_tuple] = False
                 dfa_states.append(U_tuple)
@@ -157,5 +157,5 @@ tf[(9, 'b')] = {10}
 nfae = NFAe(states, alphabet, tf, start_state, accept_states)
 dfa = convert_NFAe_to_DFA(nfae)
 # Test
-print(nfae.run_with_input_list(list("aaba")))  # True
-print(dfa.states)
+# print(nfae.run_with_input_list(list("aaba")))  # True
+print(dfa.accept_states)
